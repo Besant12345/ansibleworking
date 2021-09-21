@@ -1,0 +1,52 @@
+    - name: Create ca certificate and key
+      command: "{{ cockroach_bin }}cockroach cert create-ca --certs-dir={{ certs_dir }} --ca-key={{ ca_dir }}/ca.key"
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+      tags: file
+
+    - name: Create NODE_01 certs
+      command: "{{ cockroach_bin }}cockroach cert create-node {{ node_01 }} {{ node_01_host }} localhost 127.0.0.1 0.0.0.0 {{ lb_ip }} {{ lb_host }} --certs-dir={{ certs_dir }} --ca-key={{ ca_dir }}/ca.key"
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+    - name: move nodes into node1 certs directory
+      command: "{{ item }}"
+      with_items:
+        - 'mv certs/node.crt certs/node1/node.crt'
+        - 'mv certs/node.key certs/node1/node.key'
+        - 'cp certs/ca.crt certs/node1/ca.crt'
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+
+    - name: Create NODE_02 certs and key
+      command: "{{ cockroach_bin }}cockroach cert create-node {{ node_02 }} {{ node_02_host }} localhost 127.0.0.1 0.0.0.0 {{ lb_ip }} {{ lb_host }} --certs-dir={{ certs_dir }} --ca-key={{ ca_dir }}/ca.key"
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+    - name: move nodes into node2 certs directory
+      command: "{{ item }}"
+      with_items:
+        - 'mv certs/node.crt certs/node2/node.crt'
+        - 'mv certs/node.key certs/node2/node.key'
+        - 'cp certs/ca.crt certs/node2/ca.crt'
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+   
+    - name: Create NODE_03 certs and key
+      command: "{{ cockroach_bin }}cockroach cert create-node {{ node_03 }} {{ node_03_host }} localhost 127.0.0.1 0.0.0.0 {{ lb_ip }} {{ lb_host }} --certs-dir={{ certs_dir }} --ca-key={{ ca_dir }}/ca.key"
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+    - name: move nodes into node3 certs directory
+      command: "{{ item }}"
+      with_items:
+        - 'mv certs/node.crt certs/node3/node.crt'
+        - 'mv certs/node.key certs/node3/node.key'
+        - 'cp certs/ca.crt certs/node3/ca.crt'
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+
+    - name: Change certs permission for all nodes 
+      file:
+        path: "{{ item }}"
+        mode: '755'
+        recurse: yes
+      with_items:
+        - "certs/node1/"
+        - "certs/node2/"
+        - "certs/node3/"
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'
+
+    - name: Create client certs and key 
+      shell: "{{ cockroach_bin }}cockroach cert create-client root --certs-dir={{ certs_dir }} --ca-key={{ ca_dir }}/ca.key"
+      when: ansible_facts['nodename'] == 'crdb-nonprod-node01-admin'

@@ -1,0 +1,62 @@
+    - name: Remove ntp
+      yum:
+        name: ntp
+        state: absent
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
+
+    - name: Install ntp
+      yum:
+        name: ntp
+        state: present
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
+
+    - name: Stop ntpd
+      systemd:
+        name: ntpd
+        state: stopped
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
+
+    - name: Comment out current server info
+      replace:
+        path: /etc/ntp.conf
+        regexp: 'server'
+        replace: '#server'
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
+
+    - name: Add new honeywell ntp server
+      lineinfile:
+        path: /etc/ntp.conf
+        line: "{{ item }}"
+      with_items:
+        - server ntp1.honeywell.com iburst
+        - server ntp2.honeywell.com iburst
+        - tinker panic 0
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
+
+    - name: Restart ntpd
+      systemd:
+        name: ntpd
+        state: restarted
+        enabled: yes
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
+
+    - name: Sleep for 25 seconds and continue play 
+      pause:
+        seconds: 25
+      tags: time
+
+    - name: Check current time Synchronization
+      shell: ntpq -p
+      register: "ntp"
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
+
+    - debug: var=ntp.stdout_lines
+      when: ansible_facts['nodename'] != 'crdb-nonprod-node01-admin'
+      tags: time
